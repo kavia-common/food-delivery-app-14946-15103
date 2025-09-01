@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API
+  version: 1.0.0
+  description: Sends notifications via in-app, email, SMS, and supports WebSocket streams.
+
+servers:
+  - url: ws://localhost:8106
+    description: Local WS
+  - url: http://localhost:8106
+    description: Local HTTP
+  - url: https://notify.foodly.example.com
+    description: Production
+
+tags:
+  - name: Notifications
+
+paths:
+  /notifications:
+    post:
+      tags: [Notifications]
+      summary: Send a notification to a user or topic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationCreateRequest' }
+      responses:
+        '202':
+          description: Accepted
+  /notifications/stream:
+    get:
+      tags: [Notifications]
+      summary: WebSocket endpoint
+      description: Upgrades to WebSocket for real-time notifications.
+      responses:
+        '101':
+          description: Switching Protocols
+
+components:
+  schemas:
+    Notification:
+      type: object
+      required: [id, type, title, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        orderId: { type: string }
+        type:
+          type: string
+          enum: [order_update, promotion, system, review_event]
+        title: { type: string }
+        body: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+        read: { type: boolean, default: false }
+        createdAt: { type: string, format: date-time }
+
+    NotificationCreateRequest:
+      type: object
+      required: [type, title]
+      properties:
+        userId: { type: string }
+        topic: { type: string }
+        orderId: { type: string }
+        type:
+          type: string
+          enum: [order_update, promotion, system, review_event]
+        title: { type: string }
+        body: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+        channels:
+          type: array
+          items:
+            type: string
+            enum: [in_app, email, sms, push]
